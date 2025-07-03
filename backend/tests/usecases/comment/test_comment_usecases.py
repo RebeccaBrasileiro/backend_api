@@ -1,6 +1,9 @@
 import uuid
+import pytest
 from turismo.domain.entities.comment import Comment
-from turismo.infra.repositories.in_memory_comment_repository import InMemoryCommentRepository
+from turismo.infra.repositories.in_memory.in_memory_comment_repository import (
+    InMemoryCommentRepository,
+)
 from turismo.usecases.comment.add_comment import AddCommentUseCase
 from turismo.usecases.comment.delete_comment import DeleteCommentUseCase
 from turismo.usecases.comment.get_comments_by_post import GetCommentsByPostUseCase
@@ -13,34 +16,36 @@ def create_test_comment(user_id=None, post_id=None) -> Comment:
         post_id=post_id or str(uuid.uuid4()),
         user_id=user_id or str(uuid.uuid4()),
         comment="Comentário de teste",
-        date="2025-06-09"
+        date="2025-06-09",
     )
 
 
-def test_add_comment():
+@pytest.mark.asyncio
+async def test_add_comment():
     repo = InMemoryCommentRepository()
     comment = create_test_comment()
     usecase = AddCommentUseCase(repo)
 
-    result = usecase.execute(comment)
+    result = await usecase.execute(comment)
 
     assert result == comment
     assert repo._comments[comment.id] == comment
 
 
-def test_get_comments_by_post():
+@pytest.mark.asyncio
+async def test_get_comments_by_post():
     repo = InMemoryCommentRepository()
     post_id = str(uuid.uuid4())
     comment1 = create_test_comment(post_id=post_id)
     comment2 = create_test_comment(post_id=post_id)
     comment_other = create_test_comment()
 
-    repo.add_comment(comment1)
-    repo.add_comment(comment2)
-    repo.add_comment(comment_other)
+    await repo.add_comment(comment1)
+    await repo.add_comment(comment2)
+    await repo.add_comment(comment_other)
 
     usecase = GetCommentsByPostUseCase(repo)
-    result = usecase.execute(post_id)
+    result = await usecase.execute(post_id)
 
     assert comment1 in result
     assert comment2 in result
@@ -48,27 +53,29 @@ def test_get_comments_by_post():
     assert len(result) == 2
 
 
-def test_get_comments_by_post_empty():
+@pytest.mark.asyncio
+async def test_get_comments_by_post_empty():
     repo = InMemoryCommentRepository()
     usecase = GetCommentsByPostUseCase(repo)
-    result = usecase.execute("post-vazio")
+    result = await usecase.execute("post-vazio")
 
     assert result == []
 
 
-def test_get_comments_by_user():
+@pytest.mark.asyncio
+async def test_get_comments_by_user():
     repo = InMemoryCommentRepository()
     user_id = str(uuid.uuid4())
     comment1 = create_test_comment(user_id=user_id)
     comment2 = create_test_comment(user_id=user_id)
     comment_other = create_test_comment()
 
-    repo.add_comment(comment1)
-    repo.add_comment(comment2)
-    repo.add_comment(comment_other)
+    await repo.add_comment(comment1)
+    await repo.add_comment(comment2)
+    await repo.add_comment(comment_other)
 
     usecase = GetCommentsByUserUseCase(repo)
-    result = usecase.execute(user_id)
+    result = await usecase.execute(user_id)
 
     assert comment1 in result
     assert comment2 in result
@@ -76,28 +83,31 @@ def test_get_comments_by_user():
     assert len(result) == 2
 
 
-def test_get_comments_by_user_empty():
+@pytest.mark.asyncio
+async def test_get_comments_by_user_empty():
     repo = InMemoryCommentRepository()
     usecase = GetCommentsByUserUseCase(repo)
-    result = usecase.execute("user-vazio")
+    result = await usecase.execute("user-vazio")
 
     assert result == []
 
 
-def test_delete_comment():
+@pytest.mark.asyncio
+async def test_delete_comment():
     repo = InMemoryCommentRepository()
     comment = create_test_comment()
-    repo.add_comment(comment)
+    await repo.add_comment(comment)
 
     usecase = DeleteCommentUseCase(repo)
-    usecase.execute(comment.id)
+    await usecase.execute(comment.id)
 
     assert comment.id not in repo._comments
 
 
-def test_delete_comment_not_found():
+@pytest.mark.asyncio
+async def test_delete_comment_not_found():
     repo = InMemoryCommentRepository()
     usecase = DeleteCommentUseCase(repo)
 
     # Só garante que não levanta erro
-    usecase.execute("id-invalido")
+    await usecase.execute("id-invalido")

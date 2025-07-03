@@ -1,10 +1,10 @@
 {
 
-  "name": "Blog API Dev",
+  "name": "Turismo API Dev",
 
   "context": "..",
 
-  "dockerFile": "../Dockerfile",
+  "dockerFile": "../Dockerfile.dev",
 
   "workspaceFolder": "/home/devuser/app",
 
