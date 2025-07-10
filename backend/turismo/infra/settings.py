@@ -5,9 +5,9 @@ load_dotenv()
 
 DOCKER_ENV = os.getenv("DOCKER_ENV", "0") == "1"
 
-POSTGRES_USER = os.getenv("POSTGRES_USER", "bloguser")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "blogpass")
-POSTGRES_DB = os.getenv("POSTGRES_DB", "blogdb")
+POSTGRES_USER = os.getenv("POSTGRES_USER", "turismouser")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "turismopass")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "turismodb")
 POSTGRES_HOST = "db" if DOCKER_ENV else "localhost"
 POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 

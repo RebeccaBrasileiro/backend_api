@@ -1,40 +1,43 @@
 import sqlalchemy as sa
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from turismo.domain.entities.comment import Comment
+from turismo.domain.entities.user import User
+from turismo.domain.value_objects.email_vo import Email
+from turismo.domain.value_objects.password import Password
 import uuid
-from datetime import datetime
 from turismo.infra.database import Base
 
 
-class CommentModel(Base):
-    __tablename__ = "comments"
+class UserModel(Base):
+    __tablename__ = "users"
 
     id: Mapped[str] = mapped_column(
         sa.String, primary_key=True, default=lambda: str(uuid.uuid4())
     )
-    comment: Mapped[str] = mapped_column(sa.Text, nullable=False)
-    post_id: Mapped[str] = mapped_column(sa.String, sa.ForeignKey("posts.id"))
-    user_id: Mapped[str] = mapped_column(sa.String, sa.ForeignKey("users.id"))
-    date: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.now())
+    name: Mapped[str] = mapped_column(sa.String, nullable=False)
+    email: Mapped[str] = mapped_column(sa.String, unique=True, nullable=False)
+    password: Mapped[str] = mapped_column(sa.String, nullable=False)
+    role: Mapped[str] = mapped_column(sa.String, default="user")
 
-    post = relationship("PostModel", back_populates="comments")
-    user = relationship("UserModel", back_populates="comments")
+    posts = relationship("PostModel", back_populates="user", cascade="all, delete")
+    comments = relationship(
+        "CommentModel", back_populates="user", cascade="all, delete"
+    )
 
     @classmethod
-    def from_entity(cls, entity: Comment) -> "CommentModel":
+    def from_entity(cls, entity: User) -> "UserModel":
         return cls(
             id=entity.id,
-            comment=entity.comment,
-            post_id=entity.post_id,
-            user_id=entity.user_id,
-            date=entity.date,
+            name=entity.name,
+            email=str(entity.email),
+            password=str(entity.password),
+            role=entity.role,
         )
 
-    def to_entity(self) -> Comment:
-        return Comment(
+    def to_entity(self) -> User:
+        return User(
             id=self.id,
-            comment=self.comment,
-            post_id=self.post_id,
-            user_id=self.user_id,
-            date=self.date,
+            name=self.name,
+            email=Email(self.email),
+            password=Password(self.password),
+            role=self.role,
         )

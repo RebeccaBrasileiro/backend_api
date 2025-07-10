@@ -23,63 +23,58 @@ def create_test_user() -> User:
     )
 
 
-@pytest.mark.asyncio
-async def test_register_user():
+def test_register_user():
     repo = InMemoryUserRepository()
     usecase = RegisterUserUseCase(repo)
     user = create_test_user()
 
-    result = await usecase.execute(user)
+    result = usecase.execute(user)
 
     assert result == user
-    assert await repo.get_current_user() == user
+    assert repo.get_current_user() == user
 
 
-@pytest.mark.asyncio
-async def test_login_user_success():
+def test_login_user_success():
     repo = InMemoryUserRepository()
     user = create_test_user()
-    await repo.register(user)
+    repo.register(user)
 
     usecase = LoginUserUseCase(repo)
-    result = await usecase.execute(user.email, user.password)
+    result = usecase.execute(user.email, user.password)
 
     assert result == user
-    assert await repo.get_current_user() == user
+    assert repo.get_current_user() == user
 
 
-@pytest.mark.asyncio
-async def test_login_user_failure():
+def test_login_user_failure():
     repo = InMemoryUserRepository()
     usecase = LoginUserUseCase(repo)
     email = Email("notfound@example.com")
     password = Password("wrongP@1ss")
 
-    result = await usecase.execute(email, password)
+    result = usecase.execute(email, password)
 
     assert result is None
-    assert await repo.get_current_user() is None
+    assert repo.get_current_user() is None
 
 
-@pytest.mark.asyncio
-async def test_logout_user():
+def test_logout_user():
     repo = InMemoryUserRepository()
     user = create_test_user()
-    await repo.register(user)
-    await repo.login(user.email, user.password)
+    repo.register(user)
+    repo.login(user.email, user.password)
 
     usecase = LogoutUserUseCase(repo)
-    await usecase.execute()
+    usecase.execute()
 
-    assert await repo.get_current_user() is None
+    assert repo.get_current_user() is None
 
 
-@pytest.mark.asyncio
-async def test_set_current_user():
+def test_set_current_user():
     repo = InMemoryUserRepository()
     user = create_test_user()
 
     usecase = SetCurrentUserUseCase(repo)
-    await usecase.execute(user)
+    usecase.execute(user)
 
-    assert await repo.get_current_user() == user
+    assert repo.get_current_user() == user

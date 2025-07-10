@@ -1,6 +1,6 @@
 export PYTHONPATH := $(PWD)
 
-.PHONY: test test-cov lint format typecheck run
+.PHONY: test test-cov lint format typecheck alembic migrate-dev revision downgrade run
 
 test:
 	pytest -v
@@ -14,13 +14,13 @@ test-cov:
 	coverage html
 
 lint:
-	black blog tests --check
+	black turismo tests --check
 
 format:
-	black blog tests
+	black turismo tests
 
 typecheck:
-	mypy blog --explicit-package-bases
+	mypy turismo --explicit-package-bases
 
 # Alembic
 
@@ -40,5 +40,5 @@ downgrade:
 	alembic downgrade -1
 
 run:
-	uvicorn blog.api.main:app --reload --host 0.0.0.0 --port 8000
+	uvicorn turismo.api.main:app --reload --host 0.0.0.0 --port 8000
 	

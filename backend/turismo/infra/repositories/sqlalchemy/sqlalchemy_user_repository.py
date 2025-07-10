@@ -1,40 +1,65 @@
-import sqlalchemy as sa
-from sqlalchemy.orm import relationship, Mapped, mapped_column
-from turismo.domain.entities.comment import Comment
-import uuid
-from datetime import datetime
-from turismo.infra.database import Base
+from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+
+from turismo.domain.entities.user import User
+from turismo.domain.repositories.user_repository import UserRepository
+from turismo.domain.value_objects.email_vo import Email
+from turismo.domain.value_objects.password import Password
+from turismo.infra.models.user_model import UserModel
+
+from turismo.infra.database import async_session
 
 
-class CommentModel(Base):
-    __tablename__ = "comments"
+class SQLAlchemyUserRepository(UserRepository):
+    def __init__(self, session: AsyncSession):
+        self._session = session
+        self._current_user: Optional[User] = None
 
-    id: Mapped[str] = mapped_column(
-        sa.String, primary_key=True, default=lambda: str(uuid.uuid4())
-    )
-    comment: Mapped[str] = mapped_column(sa.Text, nullable=False)
-    post_id: Mapped[str] = mapped_column(sa.String, sa.ForeignKey("posts.id"))
-    user_id: Mapped[str] = mapped_column(sa.String, sa.ForeignKey("users.id"))
-    date: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.now())
+    async def register(self, user: User) -> User:
+        model = UserModel.from_entity(user)
+        self._session.add(model)
+        await self._session.commit()
+        await self._session.refresh(model)
+        user.id = model.id
+        return model.to_entity()
 
-    post = relationship("PostModel", back_populates="comments")
-    user = relationship("UserModel", back_populates="comments")
+    async def login(self, email: Email, password: Password) -> Optional[User]:
+        stmt = select(UserModel).where(UserModel.email == str(email))
+        result = await self._session.execute(stmt)
+        user = result.scalar_one_or_none()
 
-    @classmethod
-    def from_entity(cls, entity: Comment) -> "CommentModel":
-        return cls(
-            id=entity.id,
-            comment=entity.comment,
-            post_id=entity.post_id,
-            user_id=entity.user_id,
-            date=entity.date,
-        )
+        if user and password.verify(user.password):
+            self._current_user = user.to_entity()
+            return self._current_user
+        return None
 
-    def to_entity(self) -> Comment:
-        return Comment(
-            id=self.id,
-            comment=self.comment,
-            post_id=self.post_id,
-            user_id=self.user_id,
-            date=self.date,
-        )
+    async def get_current_user(self) -> Optional[User]:
+        if self._current_user is None:
+            raise ValueError("Current user is not set. Please log in first.")
+        stmt = select(UserModel).where(UserModel.id == str(self._current_user.id))
+        result = await self._session.execute(stmt)
+        user = result.scalar_one_or_none()
+        if user:
+            self._current_user = user.to_entity()
+        else:
+            self._current_user = None
+        return self._current_user
+
+    async def set_current_user(self, user: User) -> None:
+        self._current_user = user
+
+    async def logout(self) -> None:
+        self._current_user = None
+
+    async def get_by_email(self, email: Email) -> Optional[User]:
+        stmt = select(UserModel).where(UserModel.email == str(email))
+        result = await self._session.execute(stmt)
+        user_model = result.scalar_one_or_none()
+        return user_model.to_entity() if user_model else None
+
+    async def get_by_id(self, id: str) -> Optional[User]:
+        stmt = select(UserModel).where(UserModel.id == str(id))
+        result = await self._session.execute(stmt)
+        user_model = result.scalar_one_or_none()
+        return user_model.to_entity() if user_model else None

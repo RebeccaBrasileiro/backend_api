@@ -1,10 +1,9 @@
 import os
-from pydantic_settings import BaseSettings
-from pydantic import ConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import ClassVar
 
 
 class Settings(BaseSettings):
-    model_config = ConfigDict(from_attributes=True)
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
@@ -17,9 +16,9 @@ class Settings(BaseSettings):
     DATABASE_URL_ALEMBIC: str  # psycopg2 para Alembic
     DATABASE_URL_TEST: str
 
-    PGADMIN_DEFAULT_EMAIL: str
-    PGADMIN_DEFAULT_PASSWORD: str
-    PGADMIN_PORT: int
+    # PGADMIN_DEFAULT_EMAIL: str
+    # PGADMIN_DEFAULT_PASSWORD: str
+    # PGADMIN_PORT: int
 
     SECRET_KEY: str
     ALGORITHM: str
@@ -27,6 +26,14 @@ class Settings(BaseSettings):
 
     # env_file = ".env"
     # extra = "forbid"
+    # model_config = {
+    #     "env_file": ".env",
+    #     "extra": "ignore"
+    # }
+
+    model_config: ClassVar[SettingsConfigDict] = SettingsConfigDict(
+        env_file=".env", extra="ignore"
+    )
 
 
 settings = Settings()
