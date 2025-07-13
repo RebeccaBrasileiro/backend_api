@@ -13,11 +13,16 @@ class CommentModel(Base):
         sa.String, primary_key=True, default=lambda: str(uuid.uuid4())
     )
     comment: Mapped[str] = mapped_column(sa.Text, nullable=False)
-    post_id: Mapped[str] = mapped_column(sa.String, sa.ForeignKey("posts.id"))
+
+    # 🔴 Removida a foreign key para posts.id
+    post_id: Mapped[str] = mapped_column(sa.String)  # Sem ForeignKey
+
     user_id: Mapped[str] = mapped_column(sa.String, sa.ForeignKey("users.id"))
     date: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.now())
 
-    post = relationship("PostModel", back_populates="comments")
+    # 🔴 Removido relacionamento com PostModel
+    # post = relationship("PostModel", back_populates="comments")
+
     user = relationship("UserModel", back_populates="comments")
 
     @classmethod

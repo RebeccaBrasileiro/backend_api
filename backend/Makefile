@@ -1,6 +1,6 @@
 export PYTHONPATH := $(PWD)
 
-.PHONY: test test-cov lint format typecheck alembic migrate-dev revision downgrade run
+.PHONY: test test-cov lint format typecheck run
 
 test:
 	pytest -v
@@ -14,13 +14,13 @@ test-cov:
 	coverage html
 
 lint:
-	black turismo tests --check
+	black blog tests --check
 
 format:
-	black turismo tests
+	black blog tests
 
 typecheck:
-	mypy turismo --explicit-package-bases
+	mypy blog --explicit-package-bases
 
 # Alembic
 

@@ -8,7 +8,6 @@ RUN adduser --disabled-password --gecos '' devuser
 
 # Diretório de trabalho dentro do container
 WORKDIR /home/devuser/app
-ENV PYTHONPATH=/home/devuser/app
 
 # Copia arquivos e instala dependências
 COPY backend/requirements.txt .

@@ -9,15 +9,11 @@ from turismo.api.main import app
 from turismo.api import deps
 from asgi_lifespan import LifespanManager
 
-
-# ⚡️ 1) Força o DATABASE_URL a ser o de teste
-os.environ["DATABASE_URL"] = os.getenv(
-    "DATABASE_URL_TEST",
-    "postgresql+asyncpg://test_user:test_password@db_test:5432/turismo_test",
+# URL para o banco de testes (deve bater com seu docker-compose)
+TEST_DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+asyncpg://test_user:test_password@db_test:5432/blog_test",
 )
-
-# Guarda para uso abaixo
-TEST_DATABASE_URL = os.environ["DATABASE_URL"]
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -38,14 +34,14 @@ async def setup_engine():
         bind=engine, class_=AsyncSession, expire_on_commit=False
     )
 
-    # Cria todas as tabelas para o teste
+    # Criação de tabelas
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
     yield engine, async_session
 
-    # Teardown se quiser dropar tudo de novo no final
+    # Teardown: drop tables
     # async with engine.begin() as conn:
     #     await conn.run_sync(Base.metadata.drop_all)
 
@@ -59,11 +55,13 @@ async def db_session(setup_engine):
 
 
 @pytest_asyncio.fixture
-async def client(db_session):
+async def client(setup_engine):
     """Cria cliente de teste com override de dependências."""
+    _, async_session = setup_engine
 
     async def override_get_db_session():
-        yield db_session
+        async with async_session() as session:
+            yield session
 
     app.dependency_overrides[deps.get_db_session] = override_get_db_session
 
