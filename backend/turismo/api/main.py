@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.security import HTTPBearer
-from turismo.api.routes import comment_route,user_route
+from turismo.api.routes import comment_route, user_route
 from turismo.api.openapi_tags import openapi_tags
 
 

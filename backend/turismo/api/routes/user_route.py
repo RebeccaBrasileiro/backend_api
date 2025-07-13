@@ -16,9 +16,9 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from turismo.api.schemas.user_schema import (
     RegisterUserInput,
     UserOutput,
-    MessageUserResponse,
+    TokenResponse,
 )
-from turismo.api.schemas.token_schema import TokenResponse
+from turismo.api.schemas.message_schema import MessageOutput
 from turismo.api.security import create_access_token
 from turismo.domain.repositories.user_repository import UserRepository
 from turismo.api.schemas.user_schema import LoginUserInput
@@ -34,7 +34,7 @@ router = APIRouter()
 
 @router.post(
     "/register",
-    response_model=MessageUserResponse,
+    response_model=MessageOutput,
     summary="Registrar novo usuário",
     description="Cria um novo usuário com nome, email e senha forte.",
 )
@@ -51,9 +51,9 @@ async def register_user(
             password=Password(data.password),
             role=data.role,
         )
-        result = await usecase.execute(user)
-        return MessageUserResponse(
-            message="User registered successfully", user=UserOutput.from_entity(result)
+        await usecase.execute(user)
+        return MessageOutput(
+            message="User registered successfully"  # , user=UserOutput.from_entity(result)
         )
     except PasswordValidationError as p:
         raise HTTPException(status_code=400, detail=str(p))
@@ -82,7 +82,9 @@ async def login_user(
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         token = create_access_token(data={"sub": user.id})
-        return TokenResponse(access_token=token, token_type="bearer")
+        return TokenResponse(
+            access_token=token, token_type="bearer", user=UserOutput.from_entity(user)
+        )
     except PasswordValidationError as p:
         raise HTTPException(status_code=400, detail=str(p))
     except ValueError as e:
@@ -100,19 +102,16 @@ async def login_user(
     summary="Informar os dados do usuário atual",
     description="Retorna os dados do usuário atual.",
 )
-async def get_current_user(
+async def get_me_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    user_repo: UserRepository = Depends(get_user_repository),
-    user: str = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     try:
-        usecase = GetCurrentUserUseCase(user_repo)
-        result = await usecase.execute(user.id)
         return {
-            "id": result.id,
-            "name": result.name,
-            "email": str(result.email),
-            "role": result.role,
+            "id": user.id,
+            "name": user.name,
+            "email": str(user.email),
+            "role": user.role,
         }
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))

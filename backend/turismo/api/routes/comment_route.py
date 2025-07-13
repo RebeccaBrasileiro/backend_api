@@ -6,6 +6,7 @@ from turismo.usecases.comment.delete_comment import DeleteCommentUseCase
 from turismo.usecases.comment.get_comments_by_post import GetCommentsByPostUseCase
 from turismo.usecases.comment.get_comments_by_user import GetCommentsByUserUseCase
 from turismo.domain.entities.comment import Comment
+from turismo.domain.entities.user import User
 import uuid
 from turismo.api.schemas.comment_schema import AddCommentInput, CommentOutput
 from turismo.domain.repositories.comment_repository import CommentRepository
@@ -20,6 +21,7 @@ from turismo.infra.repositories.sqlalchemy.sqlalchemy_comment_repository import 
     SQLAlchemyCommentRepository,
 )
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from turismo.api.schemas.comment_schema import comment_to_output, comments_to_output
 
 security = HTTPBearer()
 router = APIRouter()
@@ -31,18 +33,18 @@ async def get_comments_by_post(
 ):
     usecase = GetCommentsByPostUseCase(comment_repo)
     comments = await usecase.execute(post_id)
-    return comments
+    return comments_to_output(comments)
 
 
 @router.get("/user", response_model=List[CommentOutput])
 async def get_comments_by_user(
     comment_repo: CommentRepository = Depends(get_comment_repository),
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    user: str = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     usecase = GetCommentsByUserUseCase(comment_repo)
     comments = await usecase.execute(user.id)
-    return comments
+    return comments_to_output(comments)
 
 
 @router.post("/", response_model=CommentOutput)
@@ -50,7 +52,7 @@ async def add_comment(
     data: AddCommentInput,
     comment_repo: CommentRepository = Depends(get_comment_repository),
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    user: str = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     if data.date.tzinfo is not None:
         data.date = data.date.replace(tzinfo=None)
@@ -63,7 +65,9 @@ async def add_comment(
     )
     usecase = AddCommentUseCase(comment_repo)
     added_comment = await usecase.execute(comment)
-    return added_comment
+    if not added_comment:
+        raise HTTPException(status_code=400, detail="Failed to add comment")
+    return comment_to_output(added_comment)
 
 
 @router.delete("/{comment_id}")

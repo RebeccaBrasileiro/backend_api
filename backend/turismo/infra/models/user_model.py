@@ -18,7 +18,9 @@ class UserModel(Base):
     password: Mapped[str] = mapped_column(sa.String, nullable=False)
     role: Mapped[str] = mapped_column(sa.String, default="user")
 
-    posts = relationship("PostModel", back_populates="user", cascade="all, delete")
+    # ❌ Esta linha deve ser removida/comentada
+    # posts = relationship("PostModel", back_populates="user", cascade="all, delete")
+
     comments = relationship(
         "CommentModel", back_populates="user", cascade="all, delete"
     )

@@ -4,6 +4,7 @@ from sqlalchemy import select, delete
 from turismo.domain.entities.comment import Comment
 from turismo.domain.repositories.comment_repository import CommentRepository
 from turismo.infra.models.comment_model import CommentModel
+from sqlalchemy.orm import joinedload
 
 
 class SQLAlchemyCommentRepository(CommentRepository):
@@ -12,17 +13,20 @@ class SQLAlchemyCommentRepository(CommentRepository):
 
     async def get_comments_by_post(self, post_id: str) -> List[Comment]:
         result = await self._session.execute(
-            select(CommentModel).where(CommentModel.post_id == post_id)
+            select(CommentModel)
+            .options(joinedload(CommentModel.user))
+            .where(CommentModel.post_id == post_id)
         )
-        return [c.to_entity() for c in result.scalars().all()]
+        return [c.to_entity() for c in result.unique().scalars().all()]
 
     async def get_comments_by_user(self, user_id: str) -> List[Comment]:
         result = await self._session.execute(
             select(CommentModel).where(CommentModel.user_id == user_id)
         )
-        return [c.to_entity() for c in result.scalars().all()]
+        return [c.to_entity() for c in result.unique().scalars().all()]
 
     async def add_comment(self, comment: Comment) -> Comment:
+        # Removida a verificação de existência de PostModel
         db_comment = CommentModel.from_entity(comment)
         self._session.add(db_comment)
         await self._session.commit()

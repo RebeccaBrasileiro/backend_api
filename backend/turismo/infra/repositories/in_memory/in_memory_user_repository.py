@@ -3,6 +3,7 @@ from turismo.domain.entities.user import User
 from turismo.domain.value_objects.email_vo import Email
 from turismo.domain.value_objects.password import Password
 from typing import Optional
+import pytest
 
 
 class InMemoryUserRepository(UserRepository):
@@ -10,26 +11,45 @@ class InMemoryUserRepository(UserRepository):
         self._users = {}
         self._current_user_id = None
 
-    def register(self, user: User) -> User:
+    @pytest.mark.asyncio
+    async def register(self, user: User) -> User:
         self._users[user.id] = user
         self._current_user_id = user.id
         return user
 
-    def login(self, email: Email, password: Password) -> Optional[User]:
+    @pytest.mark.asyncio
+    async def login(self, email: Email, password: Password) -> Optional[User]:
         for user in self._users.values():
             if user.email == email and user.password == password:
                 self._current_user_id = user.id
                 return user
         return None
 
-    def logout(self) -> None:
+    @pytest.mark.asyncio
+    async def logout(self) -> None:
         self._current_user_id = None
 
-    def get_current_user(self) -> Optional[User]:
+    @pytest.mark.asyncio
+    async def get_current_user(self) -> Optional[User]:
         if self._current_user_id is None:
             return None
         return self._users.get(self._current_user_id)
 
-    def set_current_user(self, user: User) -> None:
+    @pytest.mark.asyncio
+    async def set_current_user(self, user: User) -> None:
         self._users[user.id] = user
         self._current_user_id = user.id
+
+    @pytest.mark.asyncio
+    async def get_by_email(self, email: Email) -> None:
+        for user in self._users.values():
+            if user.email == email:
+                return user
+        return None
+
+    @pytest.mark.asyncio
+    async def get_by_id(self, id: str) -> None:
+        for user in self._users.values():
+            if user.id == id:
+                return user
+        return None

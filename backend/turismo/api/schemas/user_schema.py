@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Literal
+from turismo.domain.entities.user import User
 
 
 class RegisterUserInput(BaseModel):
@@ -37,3 +38,18 @@ class UserOutput(BaseModel):
 class MessageUserResponse(BaseModel):
     message: str
     user: UserOutput
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserOutput
+
+
+def user_to_output(user: User) -> UserOutput:
+    return UserOutput(
+        id=user.id,
+        name=user.name,
+        email=str(user.email),
+        role=user.role,
+    )

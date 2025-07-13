@@ -14,13 +14,13 @@ test-cov:
 	coverage html
 
 lint:
-	black blog tests --check
+	black turismo tests --check
 
 format:
-	black blog tests
+	black turismo tests
 
 typecheck:
-	mypy blog --explicit-package-bases
+	mypy turismo --explicit-package-bases
 
 # Alembic
 

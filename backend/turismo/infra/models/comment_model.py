@@ -1,5 +1,5 @@
 import sqlalchemy as sa
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from turismo.domain.entities.comment import Comment
 import uuid
 from datetime import datetime
@@ -14,16 +14,18 @@ class CommentModel(Base):
     )
     comment: Mapped[str] = mapped_column(sa.Text, nullable=False)
 
-    # 🔴 Removida a foreign key para posts.id
-    post_id: Mapped[str] = mapped_column(sa.String)  # Sem ForeignKey
+    # Corrigido: post_id sem ForeignKey
+    post_id: Mapped[str] = mapped_column(sa.String, nullable=True)
 
-    user_id: Mapped[str] = mapped_column(sa.String, sa.ForeignKey("users.id"))
-    date: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.now())
+    user_id: Mapped[str] = mapped_column(
+        sa.String, sa.ForeignKey("users.id", ondelete="CASCADE")
+    )
+    date: Mapped[datetime] = mapped_column(sa.DateTime, default=datetime.now)
 
-    # 🔴 Removido relacionamento com PostModel
-    # post = relationship("PostModel", back_populates="comments")
+    # ❌ Removido: relacionamento com PostModel
+    # post = relationship("PostModel", back_populates="comments", lazy="joined")
 
-    user = relationship("UserModel", back_populates="comments")
+    user = relationship("UserModel", back_populates="comments", lazy="joined")
 
     @classmethod
     def from_entity(cls, entity: Comment) -> "CommentModel":
@@ -32,7 +34,11 @@ class CommentModel(Base):
             comment=entity.comment,
             post_id=entity.post_id,
             user_id=entity.user_id,
-            date=entity.date,
+            date=(
+                datetime.fromisoformat(entity.date)
+                if isinstance(entity.date, str)
+                else entity.date
+            ),
         )
 
     def to_entity(self) -> Comment:
@@ -42,4 +48,5 @@ class CommentModel(Base):
             post_id=self.post_id,
             user_id=self.user_id,
             date=self.date,
+            user=self.user.to_entity() if hasattr(self.user, "to_entity") else None,
         )
