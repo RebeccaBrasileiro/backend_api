@@ -9,7 +9,7 @@ from alembic import context
 from dotenv import load_dotenv
 load_dotenv()
 
-from turismo.infra.database import Base # <--- Ajuste seu caminho aqui!
+from turismo.infra.database import Base# <--- Ajuste seu caminho aqui!
 from turismo.infra.models.comment_model import CommentModel
 from turismo.infra.models.user_model import UserModel # <--- Ajuste seu caminho aqui!
 
