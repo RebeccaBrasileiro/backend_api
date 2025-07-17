@@ -13,6 +13,19 @@ app = FastAPI(
     openapi_tags=openapi_tags,
 )
 
+origins = [
+    "http://localhost:5173",  # Vite local
+    "https://frontclean.vercel.app",  # Produção
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # lista de origens confiáveis
+    allow_credentials=True,
+    allow_methods=["*"],  # ou especifique ["GET", "POST"]
+    allow_headers=["*"],
+)
+
 
 @app.get("/")
 def ola():
